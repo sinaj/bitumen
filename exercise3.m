@@ -6,6 +6,24 @@ setup() ;
 % Load a database of blurred images to train from
 imdb = load('data/text_imdb.mat') ;
 
+replace_images = false;
+
+if replace_images
+    load('data/patches.mat');
+
+    train_num = 6000;
+    test_num = 3000;
+
+    imdb.images.id = 1:train_num+test_num;
+    imdb.images.set = [ones(1, train_num), 2*ones(1, test_num)];
+
+    images = data.patches(1:train_num+test_num, :, :) / 255;
+    labels = data.labels(1:train_num+test_num, :, :);
+
+    imdb.images.data = single(permute(images, [2, 3, 4, 1]));
+    imdb.images.label = single(permute(labels, [2, 3, 4, 1]));
+end
+
 % Visualize the first image in the database
 figure(31) ; set(gcf, 'name', 'Part 3.1: Data') ; clf ;
 
@@ -22,8 +40,8 @@ colormap gray ;
 % The expected input size (a single 64 x 64 x 1 image patch). This is
 % used for visualization purposes.
 
-net = initializeSmallCNN() ;
-%net = initializeLargeCNN() ;
+% net = initializeSmallCNN() ;
+net = initializeLargeCNN() ;
 
 % Display network
 vl_simplenn_display(net) ;
