@@ -6,18 +6,18 @@ setup() ;
 % Load a database of blurred images to train from
 imdb = load('data/text_imdb.mat') ;
 
-replace_images = false;
+replace_images = true;
 
 if replace_images
     load('data/patches.mat');
 
-    train_num = 6000;
-    test_num = 3000;
+    train_num = 600;
+    test_num = 300;
 
     imdb.images.id = 1:train_num+test_num;
     imdb.images.set = [ones(1, train_num), 2*ones(1, test_num)];
 
-    images = data.patches(1:train_num+test_num, :, :) / 255;
+    images = data.patches(1:train_num+test_num, :, :);
     labels = data.labels(1:train_num+test_num, :, :);
 
     imdb.images.data = single(permute(images, [2, 3, 4, 1]));
@@ -76,7 +76,7 @@ trainOpts.gpus = [] ;
 %trainOpts.expDir = 'data/text-small-gpu' ;
 %trainOpts.gpus = [1] ;
 trainOpts.batchSize = 16 ;
-trainOpts.learningRate = 0.02 ;
+trainOpts.learningRate = 0.0002 ;
 trainOpts.plotDiagnostics = false ;
 %trainOpts.plotDiagnostics = true ; % Uncomment to plot diagnostics
 trainOpts.numEpochs = 20 ;
