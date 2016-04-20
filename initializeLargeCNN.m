@@ -2,7 +2,8 @@ function net = initializeLargeCNN()
 %INITIALIZELARGECNN  Initialize a large CNN for text deblurring
 %   NET = INITIALIZELARGECNN() returns the SimpleNN model NET.
 
-net.meta.inputSize = [64 64 1 1] ;
+% net.meta.inputSize = [64 64 1 1] ;
+net.meta.inputeSize = [200 200 1 1];
 
 net.layers = { } ;
 
