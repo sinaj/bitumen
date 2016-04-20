@@ -56,7 +56,7 @@ if isnan(opts.val), opts.val = [] ; end
 
 net = vl_simplenn_tidy(net); % fill in some eventually missing values
 net.layers{end-1}.precious = 1; % do not remove predictions, used for error
-vl_simplenn_display(net, 'batchSize', opts.batchSize) ;
+% vl_simplenn_display(net, 'batchSize', opts.batchSize) ;
 
 evaluateMode = isempty(opts.train) ;
 
@@ -228,8 +228,14 @@ err(2,1) = sum(sum(sum(mass .* min(error(:,:,1:m,:),[],3)))) ;
 function err = error_binary(opts, labels, res)
 % -------------------------------------------------------------------------
 predictions = gather(res(end-1).x) ;
-error = bsxfun(@times, predictions, labels) < 0 ;
-err = sum(error(:)) ;
+p = 4;
+predictions = predictions(p+1:end-p, p+1:end-p, :, :);
+labels = labels(p+1:end-p, p+1:end-p, :, :);
+predictions = round(predictions);
+fprintf('# %d, %d (%d) #', sum(predictions(:)), sum(labels(:)), numel(labels));
+err = mean(predictions(:) == labels(:));
+% error = bsxfun(@times, predictions, labels) < 0 ;
+% err = sum(error(:)) ;
 
 % -------------------------------------------------------------------------
 function err = error_none(opts, labels, res)
@@ -281,8 +287,8 @@ stats = [] ;
 start = tic ;
 
 for t=1:opts.batchSize:numel(subset)
-  fprintf('%s: epoch %02d: %3d/%3d: ', mode, epoch, ...
-          fix((t-1)/opts.batchSize)+1, ceil(numel(subset)/opts.batchSize)) ;
+%   fprintf('%s: epoch %02d: %3d/%3d: ', mode, epoch, ...
+%           fix((t-1)/opts.batchSize)+1, ceil(numel(subset)/opts.batchSize)) ;
   batchSize = min(opts.batchSize, numel(subset) - t + 1) ;
   numDone = 0 ;
   error = [] ;
@@ -355,6 +361,9 @@ for t=1:opts.batchSize:numel(subset)
   end
   fprintf(' [%d/%d]', numDone, batchSize);
   fprintf('\n') ;
+  if sum(sum(squeeze(labels(:, :, 1, end)))) > 0
+      a = 1;
+  end
 
   % collect diagnostic statistics
   if training & opts.plotDiagnostics

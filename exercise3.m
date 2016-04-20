@@ -1,6 +1,6 @@
 setup() ;
 % setup('useGpu', true); % Uncomment to initialise with a GPU support
-
+clc;
 %% Part 3.1: Prepare the data
 
 % Load a database of blurred images to train from
@@ -11,8 +11,8 @@ replace_images = true;
 if replace_images
     load('data/patches.mat');
 
-    train_num = 600;
-    test_num = 300;
+    train_num = 350;
+    test_num = 130;
 
     imdb.images.id = 1:train_num+test_num;
     imdb.images.set = [ones(1, train_num), 2*ones(1, test_num)];
@@ -24,16 +24,16 @@ if replace_images
     imdb.images.label = single(permute(labels, [2, 3, 4, 1]));
 end
 
-% Visualize the first image in the database
-figure(31) ; set(gcf, 'name', 'Part 3.1: Data') ; clf ;
-
-subplot(1,2,1) ; imagesc(imdb.images.data(:,:,:,1)) ;
-axis off image ; title('Input (blurred)') ;
-
-subplot(1,2,2) ; imagesc(imdb.images.label(:,:,:,1)) ;
-axis off image ; title('Desired output (sharp)') ;
-
-colormap gray ;
+% % Visualize the first image in the database
+% figure(31) ; set(gcf, 'name', 'Part 3.1: Data') ; clf ;
+% 
+% subplot(1,2,1) ; imagesc(imdb.images.data(:,:,:,1)) ;
+% axis off image ; title('Input (blurred)') ;
+% 
+% subplot(1,2,2) ; imagesc(imdb.images.label(:,:,:,1)) ;
+% axis off image ; title('Desired output (sharp)') ;
+% 
+% colormap gray ;
 
 %% Part 3.2: Create a network architecture
 %
@@ -44,21 +44,21 @@ colormap gray ;
 net = initializeLargeCNN() ;
 
 % Display network
-vl_simplenn_display(net) ;
+% vl_simplenn_display(net) ;
 
 % Evaluate network on an image
 res = vl_simplenn(net, imdb.images.data(:,:,:,1)) ;
 
-figure(32) ; clf ; colormap gray ;
-set(gcf,'name', 'Part 3.2: network input') ;
-subplot(1,2,1) ;
-imagesc(res(1).x) ; axis image off  ;
-title('CNN input') ;
-
-set(gcf,'name', 'Part 3.2: network output') ;
-subplot(1,2,2) ;
-imagesc(res(end).x) ; axis image off  ;
-title('CNN output (not trained yet)') ;
+% figure(32) ; clf ; colormap gray ;
+% set(gcf,'name', 'Part 3.2: network input') ;
+% subplot(1,2,1) ;
+% imagesc(res(1).x) ; axis image off  ;
+% title('CNN input') ;
+% 
+% set(gcf,'name', 'Part 3.2: network output') ;
+% subplot(1,2,2) ;
+% imagesc(res(end).x) ; axis image off  ;
+% title('CNN output (not trained yet)') ;
 
 %% Part 3.3: learn the model
 
@@ -73,14 +73,14 @@ net = addCustomLossLayer(net, @l2LossForward, @l2LossBackward) ;
 trainOpts.expDir = 'data/text-small' ;
 trainOpts.gpus = [] ;
 % Uncomment for GPU training:
-%trainOpts.expDir = 'data/text-small-gpu' ;
+%trainOpts.expDir = 'data/text-small-gpu' ; 
 %trainOpts.gpus = [1] ;
-trainOpts.batchSize = 16 ;
-trainOpts.learningRate = 0.0002 ;
+trainOpts.batchSize = 16;%16 ;
+trainOpts.learningRate = 0.002 ;
 trainOpts.plotDiagnostics = false ;
 %trainOpts.plotDiagnostics = true ; % Uncomment to plot diagnostics
-trainOpts.numEpochs = 20 ;
-trainOpts.errorFunction = 'none' ;
+trainOpts.numEpochs = 10 ;
+trainOpts.errorFunction = 'binary' ;
 
 a = 1;
 
@@ -94,19 +94,19 @@ net.layers(end) = [] ;
 train = find(imdb.images.set == 1) ;
 val = find(imdb.images.set == 2) ;
 
-figure(33) ; set(gcf, 'name', 'Part 3.4: Results on the training set') ;
-showDeblurringResult(net, imdb, train(1:30:151)) ;
-
-figure(34) ; set(gcf, 'name', 'Part 3.4: Results on the validation set') ;
-showDeblurringResult(net, imdb, val(1:30:151)) ;
-
-figure(35) ;
-set(gcf, 'name', 'Part 3.4: Larger example on the validation set') ;
-colormap gray ;
-subplot(1,2,1) ; imagesc(imdb.examples.blurred{1}, [-1, 0]) ;
-axis image off ;
-title('CNN input') ;
-res = vl_simplenn(net, imdb.examples.blurred{1}) ;
-subplot(1,2,2) ; imagesc(res(end).x, [-1, 0]) ;
-axis image off ;
-title('CNN output') ;
+% figure(33) ; set(gcf, 'name', 'Part 3.4: Results on the training set') ;
+% showDeblurringResult(net, imdb, train(1:30:151)) ;
+% 
+% figure(34) ; set(gcf, 'name', 'Part 3.4: Results on the validation set') ;
+% showDeblurringResult(net, imdb, val(1:30:151)) ;
+% 
+% figure(35) ;
+% set(gcf, 'name', 'Part 3.4: Larger example on the validation set') ;
+% colormap gray ;
+% subplot(1,2,1) ; imagesc(imdb.examples.blurred{1}, [-1, 0]) ;
+% axis image off ;
+% title('CNN input') ;
+% res = vl_simplenn(net, imdb.examples.blurred{1}) ;
+% subplot(1,2,2) ; imagesc(res(end).x, [-1, 0]) ;
+% axis image off ;
+% title('CNN output') ;
