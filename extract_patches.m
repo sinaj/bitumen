@@ -19,7 +19,7 @@ for i = 1:length(names)
 end
 fprintf('done!\n');
 
-patch_size = 200;
+patch_size = 64;
 
 dim1 = size(images{end}, 1);
 dim2 = size(images{end}, 2);

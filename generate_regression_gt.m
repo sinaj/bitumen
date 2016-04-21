@@ -8,7 +8,7 @@ draw_img = false;
 
 % 'B0', 'B1', 'B2', 'B3', 'B4'
 % names = {'M0', 'M1', 'M2', 'M3', 'M4'};
-names = {'B0'};
+names = {'M0'};
 
 images = {};
 labels = {};
@@ -52,12 +52,12 @@ for im_ind = 1:length(names)
             filename = 'fig.gif';
             image = image(x_int, y_int);
             label = label(x_int, y_int);
-            for thr = 1:1:255
+            for thr = 1:5:255
 %                 fprintf('%d, ', thr);
                 tmp_label = image;
                 tmp_label = tmp_label > thr;
                 if draw_img
-                    imshow(tmp_label(end-80:end, end-60:end) * 255);
+                    imshow(tmp_label(end-199:end, end-199:end) * 255);
                     drawnow;
                     frame = getframe(1);
                     im = frame2im(frame);
@@ -86,9 +86,11 @@ save('data/thr_gt.mat', 'data');
 fprintf('done!\n');
 
 a = reshape(data.labels, [length(names), max_x, max_y]);
-surf(squeeze(a(1, :, :)) ./ 255);
+figure(1), surf(squeeze(a(1, :, :)) ./ 255);
 
 [x, y] = meshgrid(32+(0:max_x-1)*64, 32+(0:max_y-1)*64);
 [xq, yq] = meshgrid(1:20:size(images{1}, 1), 1:20:size(images{1}, 2));
+l = patches_label(1:max_x*max_y);
+l = reshape(l, [max_y, max_x]);
 vq = interp2(x,y,l,xq,yq,'cubic');
-surf(xq,yq,vq);
+figure(2), surf(xq,yq,vq);
