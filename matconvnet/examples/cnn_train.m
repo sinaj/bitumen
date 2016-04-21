@@ -33,6 +33,7 @@ opts.weightDecay = 0.0005 ;
 opts.momentum = 0.9 ;
 opts.memoryMapFile = fullfile(tempdir, 'matconvnet.bin') ;
 opts.profile = false ;
+opts.regression = true;
 
 opts.conserveMemory = true ;
 opts.backPropDepth = +inf ;
@@ -227,15 +228,18 @@ err(2,1) = sum(sum(sum(mass .* min(error(:,:,1:m,:),[],3)))) ;
 % -------------------------------------------------------------------------
 function err = error_binary(opts, labels, res)
 % -------------------------------------------------------------------------
-predictions = gather(res(end-1).x) ;
-p = 4;
-predictions = predictions(p+1:end-p, p+1:end-p, :, :);
-labels = labels(p+1:end-p, p+1:end-p, :, :);
-predictions = round(predictions);
-fprintf('# %d, %d (%d) #', sum(predictions(:)), sum(labels(:)), numel(labels));
-err = mean(predictions(:) == labels(:));
-% error = bsxfun(@times, predictions, labels) < 0 ;
-% err = sum(error(:)) ;
+if opts.regression
+    predictions = gather(res(end-1).x) ;
+    p = 4;
+    predictions = predictions(p+1:end-p, p+1:end-p, :, :);
+    labels = labels(p+1:end-p, p+1:end-p, :, :);
+    predictions = round(predictions);
+    fprintf('# %d, %d (%d) #', sum(predictions(:)), sum(labels(:)), numel(labels));
+    err = mean(predictions(:) == labels(:));
+else
+    predictions = gather(res(end-1).x) ;
+    err = mean(((predictions(:) - labels(:)) ./ labels(:)) .^ 2);
+end
 
 % -------------------------------------------------------------------------
 function err = error_none(opts, labels, res)

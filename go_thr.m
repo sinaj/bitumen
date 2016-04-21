@@ -4,7 +4,7 @@ clc;
 %% Part 3.1: Prepare the data
 
 % Load a database of blurred images to train from
-imdb = load('data/text_imdb.mat') ;
+% imdb = load('data/text_imdb.mat') ;
 
 replace_images = true;
 
@@ -21,7 +21,7 @@ if replace_images
     labels = data.labels(1:train_num+test_num);
 
     imdb.images.data = single(permute(images, [2, 3, 4, 1]));
-    imdb.images.labels = single(permute(labels, [2, 1]));
+    imdb.images.label = single(permute(labels, [2, 1]));
 end
 
 % % Visualize the first image in the database
@@ -40,7 +40,7 @@ end
 % The expected input size (a single 64 x 64 x 1 image patch). This is
 % used for visualization purposes.
 
-net = cnn_mnist_init() ;
+net = initializeRegCNN() ;
 % net = initializeLargeCNN() ;
 
 % Display network
@@ -65,26 +65,20 @@ res = vl_simplenn(net, imdb.images.data(:,:,:,1)) ;
 % Add a loss (using a custom layer)
 net = addCustomLossLayer(net, @l2LossForward, @l2LossBackward) ;
 
-% Extra: uncomment the following line to use your implementation
-% of the L1 loss
-%net = addCustomLossLayer(net, @l1LossForward, @l1LossBackward) ;
-
 % Train
-trainOpts.expDir = 'data/text-small' ;
+trainOpts.expDir = 'data/epoches' ;
 trainOpts.gpus = [] ;
-% Uncomment for GPU training:
-%trainOpts.expDir = 'data/text-small-gpu' ; 
-%trainOpts.gpus = [1] ;
-trainOpts.batchSize = 16; %16 ;
-trainOpts.learningRate = 0.0002 ;
+trainOpts.batchSize = 16;
+trainOpts.learningRate = 2e-10 ;
 trainOpts.plotDiagnostics = false ;
 % trainOpts.plotDiagnostics = true ; % Uncomment to plot diagnostics
-trainOpts.numEpochs = 4 ;
+trainOpts.numEpochs = 1 ;
 trainOpts.errorFunction = 'binary' ;
+trainOpts.regression = false;
 
 a = 1;
 
-net = cnn_train(net, imdb, @getBatch, trainOpts) ;
+net = cnn_train(net, imdb, @getBatch_reg, trainOpts) ;
 
 % Deploy: remove loss
 net.layers(end) = [] ;
