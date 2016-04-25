@@ -65,8 +65,34 @@ net.layers(end) = [] ;
 
 %% Part 4: evaluate the model
 
+fprintf('Evaluating Test Set...\n');
 % Evaluate network on an image
-% res = vl_simplenn(net, imdb.images.data(:,:,:,val(1))) ;
+res = vl_simplenn(net, imdb.images.data(:,:,:,val)) ;
+
+prediction = round(res(end).x);
+
+label = imdb.images.label(:, :, :, val);
+
+prediction = prediction(:);
+label = label(:);
+
+pos = prediction == 1;
+neg = prediction == 0;
+
+l_pos = label == 1;
+l_neg = label == 0;
+
+tp = sum(pos & l_pos);
+tn = sum(neg & l_neg);
+fp = sum(pos & l_neg);
+fn = sum(neg & l_pos);
+
+acc = (tp + tn) / (tp + tn + fp + fn);
+precision = tp / (tp + fp);
+recall = tp / (tp + fn);
+f_score = 2 * precision * recall / (precision + recall);
+
+fprintf('ACC: %.4f, PREC: %.4f, REC: %.4f, F_SCORE: %.4f\n', acc, precision, recall, f_score);
 
 % figure(32) ; clf ; colormap gray ;
 % set(gcf,'name', 'Initial Network') ;
@@ -82,9 +108,9 @@ net.layers(end) = [] ;
 
 %% Create Image
 
-fprintf('Evaluating Test Set...');
-res = vl_simplenn(net, imdb.images.data(:,:,:,val)) ;
-fprintf('done!\n');
+
+% res = vl_simplenn(net, imdb.images.data(:,:,:,val)) ;
+
 
 out = gather(res(end).x);
 
@@ -104,6 +130,7 @@ for x_ind = 1:max_x
 end
 
 recreated_image = 1 - imfill(1-recreated_image, 'holes');
+fprintf('done!\n');
 
 figure(100), imshow(recreated_image);
 
