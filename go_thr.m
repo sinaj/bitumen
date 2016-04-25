@@ -1,64 +1,37 @@
 setup() ;
 % setup('useGpu', true); % Uncomment to initialise with a GPU support
+clear;
 clc;
 %% Part 3.1: Prepare the data
 
 % Load a database of blurred images to train from
 % imdb = load('data/text_imdb.mat') ;
 
-replace_images = true;
 
-if replace_images
-    load('data/thr_gt.mat');
+load('data/thr_gt.mat');
 
-    train_num = 300;
-    test_num = 130;
+patch_per_image = 966;
 
-    imdb.images.id = 1:train_num+test_num;
-    imdb.images.set = [ones(1, train_num), 2*ones(1, test_num)];
+train_num = patch_per_image * 4;
+test_num = patch_per_image;
 
-    images = data.patches(1:train_num+test_num, :, :);
-    labels = data.labels(1:train_num+test_num);
+imdb.images.id = 1:train_num+test_num;
+imdb.images.set = [ones(1, train_num), 2*ones(1, test_num)];
 
-    imdb.images.data = single(permute(images, [2, 3, 4, 1]));
-    imdb.images.label = single(permute(labels, [2, 1]));
-end
+images = data.patches(1:train_num+test_num, :, :);
+labels = data.labels(1:train_num+test_num);
 
-% % Visualize the first image in the database
-% figure(31) ; set(gcf, 'name', 'Part 3.1: Data') ; clf ;
-% 
-% subplot(1,2,1) ; imagesc(imdb.images.data(:,:,:,1)) ;
-% axis off image ; title('Input (blurred)') ;
-% 
-% subplot(1,2,2) ; imagesc(imdb.images.label(:,:,:,1)) ;
-% axis off image ; title('Desired output (sharp)') ;
-% 
-% colormap gray ;
+imdb.images.data = single(permute(images, [2, 3, 4, 1]));
+imdb.images.label = single(permute(labels, [2, 1]));
+
+train = find(imdb.images.set == 1) ;
+val = find(imdb.images.set == 2) ;
 
 %% Part 3.2: Create a network architecture
-%
-% The expected input size (a single 64 x 64 x 1 image patch). This is
-% used for visualization purposes.
 
 net = initializeRegCNN() ;
 % net = initializeLargeCNN() ;
 
-% Display network
-% vl_simplenn_display(net) ;
-
-% Evaluate network on an image
-res = vl_simplenn(net, imdb.images.data(:,:,:,1)) ;
-
-% figure(32) ; clf ; colormap gray ;
-% set(gcf,'name', 'Part 3.2: network input') ;
-% subplot(1,2,1) ;
-% imagesc(res(1).x) ; axis image off  ;
-% title('CNN input') ;
-% 
-% set(gcf,'name', 'Part 3.2: network output') ;
-% subplot(1,2,2) ;
-% imagesc(res(end).x) ; axis image off  ;
-% title('CNN output (not trained yet)') ;
 
 %% Part 3.3: learn the model
 
@@ -71,8 +44,7 @@ trainOpts.gpus = [] ;
 trainOpts.batchSize = 16;
 trainOpts.learningRate = 2e-10 ;
 trainOpts.plotDiagnostics = false ;
-% trainOpts.plotDiagnostics = true ; % Uncomment to plot diagnostics
-trainOpts.numEpochs = 1 ;
+trainOpts.numEpochs = 100 ;
 trainOpts.errorFunction = 'binary' ;
 trainOpts.regression = false;
 
@@ -85,22 +57,91 @@ net.layers(end) = [] ;
 
 %% Part 3.4: evaluate the model
 
-train = find(imdb.images.set == 1) ;
-val = find(imdb.images.set == 2) ;
+% Evaluate network on an image
+res = vl_simplenn(net, imdb.images.data(:,:,:,val(1))) ;
 
-% figure(33) ; set(gcf, 'name', 'Part 3.4: Results on the training set') ;
-% showDeblurringResult(net, imdb, train(1:30:151)) ;
-% 
-% figure(34) ; set(gcf, 'name', 'Part 3.4: Results on the validation set') ;
-% showDeblurringResult(net, imdb, val(1:30:151)) ;
-% 
-% figure(35) ;
-% set(gcf, 'name', 'Part 3.4: Larger example on the validation set') ;
-% colormap gray ;
-% subplot(1,2,1) ; imagesc(imdb.examples.blurred{1}, [-1, 0]) ;
-% axis image off ;
-% title('CNN input') ;
-% res = vl_simplenn(net, imdb.examples.blurred{1}) ;
-% subplot(1,2,2) ; imagesc(res(end).x, [-1, 0]) ;
-% axis image off ;
-% title('CNN output') ;
+root_dir = 'data/';
+
+% 'B0', 'B1', 'B2', 'B3', 'B4'
+% names = {'M0', 'M1', 'M2', 'M3', 'M4'};
+names = {'M0'};
+
+images = {};
+labels = {};
+
+fprintf('Loading...');
+for i = 1:length(names)
+    image = imread(strcat(root_dir, names{i}, '.jpg'));
+    images{end+1} = double(rgb2gray(image));
+    label = imread(strcat(root_dir, names{i}, '_label.png'));
+    labels{end+1} = logical((label) ./ 255);
+end
+fprintf('done!\n');
+
+patch_size = 64;
+
+dim1 = size(images{end}, 1);
+dim2 = size(images{end}, 2);
+
+max_x = floor(dim1 / patch_size);
+max_y = floor(dim2 / patch_size);
+
+patch_num = max_x * max_y * length(names);
+
+patches = zeros(patch_num, patch_size, patch_size);
+patches_label = zeros(patch_num, 1);
+
+fprintf('Extracting...\n');
+ind = 1;
+for im_ind = 1:length(names)
+    tic;
+    fprintf('Image %d\n', im_ind);
+    for x_ind = 1:max_x
+        for y_ind = 1:max_y
+%             fprintf('%d, %d\n', x_ind, y_ind);
+            i = imdb.images.data(:, :, 1, val(ind));
+            res = vl_simplenn(net, i);
+            patches_label(ind) = gather(res(end).x);
+            ind = ind + 1;
+            
+        end
+    end
+    fprintf('Image %s is done!\n', names{im_ind});
+    [x, y] = meshgrid(32+(0:max_x-1)*64, 32+(0:max_y-1)*64);
+    [xq, yq] = meshgrid(1:size(images{1}, 1), 1:size(images{1}, 2));
+    l = patches_label(1:max_x*max_y);
+    l = reshape(l, [max_y, max_x]);
+    vq = interp2(x,y,l,xq,yq,'cubic');
+    vq = vq';
+    image = images{im_ind};
+    p = image > vq;
+    l = labels{im_ind};
+    p = p(32:end-62, 32:end-82);
+    l = l(32:end-62, 32:end-82);
+    acc = mean(p(:) == l(:));
+    pos = p(:) == 1;
+    neg = p(:) == 0;
+    gt_pos = l(:) == 1;
+    gt_neg = l(:) == 0;
+    tp = sum(pos & gt_pos);
+    fp = sum(pos & gt_neg);
+    tn = sum(neg & gt_neg);
+    fn = sum(neg & gt_pos);
+    precision = tp / (tp + fp);
+    recall = tp / (tp + fn);
+    fprintf('ACC: %.4f, precision: %.4f recall: %.4f time: %dsf\n', acc, precision, recall, toc);
+%     figure, imshow(p);
+end
+
+data.patches = patches;
+data.labels = patches_label;
+
+a = reshape(data.labels, [length(names), max_x, max_y]);
+figure(10), surf(squeeze(a(1, :, :)) ./ 255);
+
+[x, y] = meshgrid(32+(0:max_x-1)*64, 32+(0:max_y-1)*64);
+[xq, yq] = meshgrid(1:20:size(images{1}, 1), 1:20:size(images{1}, 2));
+l = patches_label(1:max_x*max_y);
+l = reshape(l, [max_y, max_x]);
+vq = interp2(x,y,l,xq,yq,'cubic');
+figure(20), surf(xq,yq,vq);

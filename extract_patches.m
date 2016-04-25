@@ -4,8 +4,7 @@ clc;
 root_dir = 'data/';
 patch_dir = 'patches/';
 
-% 'B0', 'B1', 'B2', 'B3', 'B4', 
-names = {'M0', 'M1', 'M2', 'M3', 'M4'};
+names = {'B0', 'B1', 'B2', 'B3', 'B4', 'M0', 'M1', 'M2', 'M3', 'M4'};
 
 images = {};
 labels = {};
@@ -19,7 +18,7 @@ for i = 1:length(names)
 end
 fprintf('done!\n');
 
-patch_size = 64;
+patch_size = 200;
 
 dim1 = size(images{end}, 1);
 dim2 = size(images{end}, 2);

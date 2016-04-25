@@ -7,8 +7,8 @@ patch_dir = 'patches/';
 draw_img = false;
 
 % 'B0', 'B1', 'B2', 'B3', 'B4'
-% names = {'M0', 'M1', 'M2', 'M3', 'M4'};
-names = {'M0'};
+names = {'M0', 'M1', 'M2', 'M3', 'M4'};
+% names = {'M0', 'M1'};
 
 images = {};
 labels = {};
@@ -85,10 +85,11 @@ data.labels = patches_label;
 save('data/thr_gt.mat', 'data');
 fprintf('done!\n');
 
-a = reshape(data.labels, [length(names), max_x, max_y]);
-figure(1), surf(squeeze(a(1, :, :)) ./ 255);
-
 [x, y] = meshgrid(32+(0:max_x-1)*64, 32+(0:max_y-1)*64);
+
+a = reshape(data.labels, [length(names), max_x, max_y]);
+figure(1), surf(x, y, squeeze(a(1, :, :))' ./ 255);
+
 [xq, yq] = meshgrid(1:20:size(images{1}, 1), 1:20:size(images{1}, 2));
 l = patches_label(1:max_x*max_y);
 l = reshape(l, [max_y, max_x]);

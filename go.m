@@ -7,7 +7,7 @@ load_images = true;
 
 if load_images
     load('data/patches.mat');
-
+    
     patch_per_image = 966;
     
     train_num = patch_per_image * 4;
@@ -39,8 +39,8 @@ colormap gray ;
 
 %% Part 2: Create a network architecture
 
-net = initializeSmallCNN() ;
-% net = initializeLargeCNN() ;
+% net = initializeSmallCNN() ;
+net = initializeLargeCNN() ;
 
 
 %% Part 3: learn the model

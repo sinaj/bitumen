@@ -4,7 +4,8 @@ clc;
 root_dir = 'data/';
 patch_dir = 'patches/';
 
-names = {'B0', 'B1', 'B2', 'B3', 'B4', 'M0', 'M1', 'M2', 'M3', 'M4'};
+% 'B0', 'B1', 'B2', 'B3', 'B4'
+names = {'M0', 'M1', 'M2', 'M3', 'M4'};
 middle_images = {};
 
 images = {};
@@ -19,7 +20,7 @@ for i = 1:length(names)
 end
 fprintf('done!\n');
 
-bg = images{6};
+bg = images{1};
 
 for i = 2:length(names)
     bg = max(images{i}, bg);
