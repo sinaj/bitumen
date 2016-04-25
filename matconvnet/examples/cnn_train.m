@@ -234,7 +234,7 @@ if opts.regression
     predictions = predictions(p+1:end-p, p+1:end-p, :, :);
     labels = labels(p+1:end-p, p+1:end-p, :, :);
     predictions = round(predictions);
-    fprintf('# %d, %d (%d) #', sum(predictions(:)), sum(labels(:)), numel(labels));
+%     fprintf('# %d, %d (%d) #', sum(predictions(:)), sum(labels(:)), numel(labels));
     err = mean(predictions(:) == labels(:));
 else
     predictions = gather(res(end-1).x) ;

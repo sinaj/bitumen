@@ -7,9 +7,11 @@ load_images = true;
 
 if load_images
     load('data/patches.mat');
+    
+    patch_per_image = 91;
 
-    train_num = 300;
-    test_num = 130;
+    train_num = patch_per_image * 9;
+    test_num = patch_per_image;
 
     imdb.images.id = 1:train_num+test_num;
     imdb.images.set = [ones(1, train_num), 2*ones(1, test_num)];
@@ -37,8 +39,8 @@ colormap gray ;
 
 %% Part 2: Create a network architecture
 
-net = initializeSmallCNN() ;
-% net = initializeLargeCNN() ;
+% net = initializeSmallCNN() ;
+net = initializeLargeCNN() ;
 
 
 %% Part 3: learn the model
@@ -50,9 +52,9 @@ net = addCustomLossLayer(net, @l2LossForward, @l2LossBackward) ;
 trainOpts.expDir = 'data/epoches' ;
 trainOpts.gpus = [] ;
 trainOpts.batchSize = 16;
-trainOpts.learningRate = 0.002 ;
+trainOpts.learningRate = 3e-9 ;
 trainOpts.plotDiagnostics = false ;
-trainOpts.numEpochs = 2 ;
+trainOpts.numEpochs = 10 ;
 trainOpts.errorFunction = 'binary' ;
 trainOpts.regression = true;
 
@@ -64,15 +66,38 @@ net.layers(end) = [] ;
 %% Part 4: evaluate the model
 
 % Evaluate network on an image
-res = vl_simplenn(net, imdb.images.data(:,:,:,val(1))) ;
+fprintf('Evaluating Validation Set...');
+tic;
+res = vl_simplenn(net, imdb.images.data(:,:,:,val)) ;
+label = imdb.images.label(:, :, :, val);
+
+pred = round(res(end).x);
+
+pos = pred(:) == 1;
+neg = pred(:) == 0;
+gt_pos = label(:) == 1;
+gt_neg = label(:) == 0;
+tp = sum(pos & gt_pos);
+fp = sum(pos & gt_neg);
+tn = sum(neg & gt_neg);
+fn = sum(neg & gt_pos);
+precision = tp / (tp + fp);
+recall = tp / (tp + fn);
+acc = mean(pred(:) == label(:));
+fprintf('\nACC: %.4f, precision: %.4f recall: %.4f time: %ds\n', acc, precision, recall, toc);
+    
+input = res(1).x;
+input = input(:, :, 1, 1);
+out = res(end).x;
+out = out(:, :, 1, 1);
 
 figure(32) ; clf ; colormap gray ;
 set(gcf,'name', 'Initial Network') ;
 subplot(1,2,1) ;
-imagesc(res(1).x) ; axis image off  ;
+imagesc(input) ; axis image off  ;
 title('CNN input') ;
 
 set(gcf,'name', 'Samlpe: Network Output') ;
 subplot(1,2,2) ;
-imagesc(round(res(end).x)) ; axis image off  ;
-title('CNN output (not trained yet)') ;
+imagesc(round(out)) ; axis image off  ;
+title('CNN output (trained)') ;
